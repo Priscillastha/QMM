@@ -1,0 +1,150 @@
+---
+title: "Assignment_QMM_LP"
+author: "Priscilla Shrestha"
+date: "2024-09-21"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# SUMMARY
+
+Summary of Linear Programming Solution for Weigelt Corporation
+This report presents a linear programming (LP) model developed to assist the Weigelt Corporation in optimizing production across its three branch plants. The company has identified an opportunity to leverage excess production capacity to manufacture a new product available in three sizes: large, medium, and small. Each size offers distinct profit margins: $420 for large, $360 for medium, and $300 for small units.
+
+Problem Formulation: The model incorporates several constraints:
+
+Production Capacity: Each plant has a maximum production capacity of 750, 900, and 450 units per day, respectively.
+Storage Limitations: In-process storage space limits production, with available square footage at each plant being 13,000, 12,000, and 5,000 square feet. The space required per unit varies by size: 20 sq. ft. for large, 15 sq. ft. for medium, and 12 sq. ft. for small.
+Sales Forecasts: Projected demand indicates potential sales of 900 large units, 1,200 medium units, and 750 small units daily.
+To maximize profits while adhering to these constraints, the LP model was implemented using R and the lpSolve package. The objective function aimed to maximize total profit, subject to the identified constraints.
+
+Implementation and Results: The implementation involved defining the objective function coefficients, constraints, direction of inequalities, and right-hand side values in R. Both versions of the code provided an optimal solution for production levels at each plant.
+
+The maximum profit obtained through the LP model was $696,000, with specific production recommendations for each size across the plants. These recommendations are crucial for management's decision-making, ensuring efficient utilization of resources while minimizing potential layoffs.
+
+Conclusion: The linear programming model successfully provides a structured approach to maximize profit for Weigelt Corporation. By effectively utilizing excess capacity and aligning production with market demand, the corporation can enhance its operational efficiency and maintain workforce stability. This analysis serves as a valuable tool for strategic planning and resource management within the company.
+
+Objective Function
+$$ \text{The Objective function is to } Max \hspace{.3cm} Z = 420 (L_1+L_2+L_3) + 360 (M_1+M_2+M_3) + 300 (S_1+S_2+S_3) $$
+Subject to the following constraints
+1. Production capacity
+-Plant 1
+$$ L_1+M_1+S_1 \le 750 $$
+-Plant 2
+$$ L_2+M_2+S_2 \le 900 $$
+-Plant 3
+$$ L_3+M_3+S_3 \le 450 $$
+2. Storage capacity
+-Plant 1
+$$ 20L_1+15M_1+12S_1 \le 13000 $$
+-Plant 2
+$$ 20L_2+15M_2+12S_2 \le 12000 $$
+-Plant 3
+$$ 20L_3+15M_3+12S_3 \le 5000 $$
+3. Sales
+-Large
+$$ L_1+L_2+L_3 \le 900 $$
+-Medium
+$$ M_1+M_2+M_3 \le 1200 $$
+-Small
+$$ S_1+S_2+S_3 \le 750 $$
+4. Equal percentage use of excess capacity
+$$ 900(L_1+M_1+S_1)=750(L_2+M_2+S_2 ) $$
+$$ 450(L_2+M_2+S_2)=900(L_3+M_3+S_3 ) $$
+
+5.Non Negativity Constraints
+$$ L_1,M_1, S_1, L_2, M_2, S_2, L_3, M_3, S_3 \ge 0 $$
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+#Load necessary package 
+library(lpSolve)
+library(tinytex)
+
+```
+
+
+
+```{r}
+# Objective function coefficients
+objectives <- c(420, 360, 300, 
+                420, 360, 300, 
+                420, 360, 300)
+```
+
+
+```{r}
+# Constraints matrix
+constraints <- matrix(c(1, 1, 1, 0, 0, 0, 0, 0, 0,      # Capacity of plant 1
+                        0, 0, 0, 1, 1, 1, 0, 0, 0,      # Capacity of plant 2
+                        0, 0, 0, 0, 0, 0, 1, 1, 1,      # Capacity of plant 3
+                        20, 15, 12, 0, 0, 0, 0, 0, 0,   # Storage of plant 1
+                        0, 0, 0, 20, 15, 12, 0, 0, 0,   # Storage of plant 2
+                        0, 0, 0, 0, 0, 0, 20, 15, 12,   # Storage of plant 3
+                        1, 0, 0, 1, 0, 0, 1, 0, 0,      # Sales for large
+                        0, 1, 0, 0, 1, 0, 0, 1, 0,      # Sales for medium
+                        0, 0, 1, 0, 0, 1, 0, 0, 1,
+                        900, 900, 900, -750, -750, -750, 0, 0, 0,
+                        0, 0, 0, 450, 450, 450, -900, -900, -900),     # Sales for small
+                      nrow = 11, byrow = TRUE)
+```
+
+
+```{r}
+# Direction of constraints 
+constraint_direction <- c("<=",
+                          "<=",
+                          "<=",
+                          "<=",
+                          "<=",
+                          "<=",
+                          "<=",
+                          "<=",
+                          "<=",
+                          "=",
+                          "=")
+```
+
+
+```{r}
+# Set right hand side coefficient
+rhs <- c(750, 900, 450,   # Capacity constraints
+         13000, 12000, 5000,   # Storage constraints
+         900, 1200, 750, 0, 0)  # Sales constraints
+```
+
+
+#Getting the value of objective function
+```{r}
+solution <- lp("max", objectives, constraints, constraint_direction, rhs)
+```
+
+
+```{r}
+# Solve the LP problem
+solution <- lp("max", objectives, constraints, constraint_direction, rhs)
+
+# Check if an optimal solution was found
+if (solution$status == 0) {
+  # Print the maximum profit
+  max_profit <- solution$objval
+  cat("Maximum Profit: $", max_profit, "\n")
+
+  # Print the decision variables
+  cat("Decision Variables (Units Produced of Each Size at Each Plant):\n")
+  print(solution$solution)
+} else {
+  cat("No optimal solution found.\n")
+}
+
+```
+
+
